@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+STEP="${1:-}"
+EVALUATOR_REPOSITORY="${MANYO_EVALUATOR_REPOSITORY:-https://github.com/diveintocode-corp/cdp_web_manyo_evaluation_code.git}"
+EVALUATOR_REF="${MANYO_EVALUATOR_REF:-rails-8.1-v1.0.0}"
+FEEDBACK_FILE="${APP_ROOT}/tmp/manyo_evaluation_feedback.md"
+
+usage() {
+  echo "Usage: bin/check step1|step2|step3|step4|step5"
+}
+
+publish_message() {
+  local message="$1"
+
+  printf '%s\n' "$message"
+  if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+    printf '%s\n' "$message" >> "$GITHUB_STEP_SUMMARY"
+  fi
+}
+
+fail_check() {
+  publish_message "## 万葉課題の評価を開始できませんでした
+
+$1"
+  exit 2
+}
+
+case "$STEP" in
+  step1|step2|step3|step4|step5)
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac
+
+cd "$APP_ROOT" || exit 2
+mkdir -p tmp
+export DISABLE_SPRING=1
+
+command -v git >/dev/null 2>&1 || fail_check "Gitをインストールしてください。"
+command -v ruby >/dev/null 2>&1 || fail_check "Rubyをインストールしてください。"
+command -v bundle >/dev/null 2>&1 || fail_check "Bundlerをインストールしてください。"
+
+CURRENT_RUBY_VERSION="$(ruby -e 'print RUBY_VERSION')"
+if [[ "$CURRENT_RUBY_VERSION" != '4.0.5' ]]; then
+  fail_check "Ruby 4.0.5を使用してください。現在のバージョンは${CURRENT_RUBY_VERSION}です。"
+fi
+
+if ! bundle check; then
+  fail_check "\`bundle install\`を実行して依存Gemをインストールしてください。"
+fi
+
+CURRENT_RAILS_VERSION="$(bundle exec ruby -e 'require "rails"; print Rails.version')"
+if [[ "$CURRENT_RAILS_VERSION" != '8.1.3' ]]; then
+  fail_check "Ruby on Rails 8.1.3を使用してください。現在のバージョンは${CURRENT_RAILS_VERSION}です。"
+fi
+
+if ! bundle info rspec-rails >/dev/null 2>&1; then
+  fail_check "Gemfileのtestグループに\`rspec-rails\`を追加し、\`bundle install\`を実行してください。"
+fi
+
+if [[ ! -d spec ]]; then
+  fail_check "\`rails generate rspec:install\`を実行し、受講生用のRSpecを作成してください。"
+fi
+
+MODEL_SPEC_COUNT="$(find spec/models -type f -name '*_spec.rb' 2>/dev/null | wc -l | tr -d ' ')"
+SYSTEM_SPEC_COUNT="$(find spec/system -type f -name '*_spec.rb' 2>/dev/null | wc -l | tr -d ' ')"
+
+if [[ "$MODEL_SPEC_COUNT" -eq 0 || "$SYSTEM_SPEC_COUNT" -eq 0 ]]; then
+  fail_check "少なくとも1件ずつ、モデルspec（\`spec/models\`）とシステムspec（\`spec/system\`）を作成してください。"
+fi
+
+if [[ -n "${MANYO_EVALUATOR_PATH:-}" ]]; then
+  EVALUATOR_PATH="$(cd "$MANYO_EVALUATOR_PATH" 2>/dev/null && pwd)" ||
+    fail_check "MANYO_EVALUATOR_PATHで指定された評価コードを読み込めません。"
+else
+  EVALUATOR_PATH="${APP_ROOT}/tmp/manyo_evaluation/${EVALUATOR_REF}"
+  if [[ ! -d "${EVALUATOR_PATH}/.git" ]]; then
+    mkdir -p "$(dirname "$EVALUATOR_PATH")"
+    if ! git clone --quiet --depth 1 --branch "$EVALUATOR_REF" "$EVALUATOR_REPOSITORY" "$EVALUATOR_PATH"; then
+      fail_check "評価コード\`${EVALUATOR_REF}\`を取得できませんでした。ネットワーク接続を確認してください。"
+    fi
+  fi
+fi
+
+EVALUATION_SPEC="${EVALUATOR_PATH}/system/${STEP}_spec.rb"
+FORMATTER="${EVALUATOR_PATH}/my_formatter.rb"
+
+[[ -f "$EVALUATION_SPEC" ]] || fail_check "評価コードに${STEP}のspecがありません。"
+[[ -f "$FORMATTER" ]] || fail_check "評価結果フォーマッターがありません。"
+
+echo "== 万葉課題 ${STEP} 自己評価 =="
+echo
+echo "== テストデータベースの準備 =="
+if ! RAILS_ENV=test bundle exec rails db:prepare; then
+  fail_check "テストデータベースを準備できませんでした。PostgreSQLとdatabase.ymlを確認してください。"
+fi
+
+echo
+echo "== 受講生が作成したRSpec =="
+if ! RAILS_ENV=test bundle exec rspec spec; then
+  fail_check "受講生が作成したRSpecに失敗があります。先にそのテストを修正してください。"
+fi
+
+echo
+echo "== Rails標準テスト =="
+if ! RAILS_ENV=test bundle exec rails test; then
+  fail_check "Rails標準テストに失敗があります。"
+fi
+
+if ! RAILS_ENV=test bundle exec rails test:system; then
+  fail_check "Railsシステムテストに失敗があります。"
+fi
+
+echo
+echo "== ${STEP} 要件評価 =="
+set +e
+MANYO_APP_ROOT="$APP_ROOT" RAILS_ENV=test bundle exec rspec \
+  "$EVALUATION_SPEC" \
+  --require "$FORMATTER" \
+  --format MyFormatter \
+  --out "$FEEDBACK_FILE" \
+  --format progress
+EVALUATION_STATUS=$?
+set -e
+
+if [[ -f "$FEEDBACK_FILE" ]]; then
+  printf '\n'
+  cat "$FEEDBACK_FILE"
+  if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+    cat "$FEEDBACK_FILE" >> "$GITHUB_STEP_SUMMARY"
+  fi
+fi
+
+if [[ "$EVALUATION_STATUS" -ne 0 ]]; then
+  echo
+  echo "${STEP}は未完了です。上記の不合格項目を修正して、もう一度bin/checkを実行してください。"
+  exit "$EVALUATION_STATUS"
+fi
+
+echo
+echo "${STEP}は完了です。"

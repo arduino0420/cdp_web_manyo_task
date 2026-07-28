@@ -1,0 +1,73 @@
+name: Starter validation
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres@localhost:5432/manyo_test
+      RAILS_ENV: test
+      SECRET_KEY_BASE: starter-validation-test
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Ruby and Bundler
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 4.0.5
+          bundler-cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: yarn
+
+      - name: Install JavaScript dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Prepare database
+        run: bundle exec rails db:prepare
+
+      - name: Run Rails tests
+        run: |
+          bundle exec rails test
+          bundle exec rails test:system
+
+      - name: Check autoloading and assets
+        run: |
+          bundle exec rails zeitwerk:check
+          bundle exec rails assets:precompile
+
+      - name: Check self-evaluation command
+        run: |
+          bash -n bin/check
+          if bin/check invalid-step; then
+            echo "bin/check accepted an invalid step"
+            exit 1
+          fi
