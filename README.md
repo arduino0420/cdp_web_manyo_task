@@ -34,6 +34,7 @@ bundle exec rails server
 ```bash
 RAILS_ENV=test bundle exec rails db:prepare
 bundle exec rails test
+bundle exec rails test:system
 ```
 
 ## 環境変数
