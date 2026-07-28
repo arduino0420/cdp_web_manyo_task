@@ -16,30 +16,44 @@ jobs:
 
     services:
       postgres:
-        image: postgres:12.1-alpine
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
       - name: Set up Ruby and Bundler
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.3.0
+          ruby-version: 4.0.5
           bundler-cache: true
       - name: Set up Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v7
         with:
-          node-version: '18'
+          node-version: '24.18.0'
       - name: Install Yarn
         run: yarn --frozen-lockfile
       - name: Create Evaluation File
+        if: contains(github.ref, 'step1') || contains(github.ref, 'step2') || contains(github.ref, 'step3') || contains(github.ref, 'step4') || contains(github.ref, 'step5')
         run: |
           rm -rf spec
           git clone https://github.com/diveintocode-corp/cdp_web_manyo_evaluation_code.git spec
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+      - name: Validate Upgraded Starter
+        if: contains(github.ref, 'upgrade/ruby-4.0.5-rails-8.1.3')
+        env:
+          RAILS_ENV: "test"
+          DATABASE_URL: "postgres://postgres@localhost:5432/manyo_test"
+          SECRET_KEY_BASE: "ci-test-secret-key-base"
+        run: |
+          bundle exec rails db:prepare
+          bundle exec rails test
+          bundle exec rails zeitwerk:check
+          bundle exec rails assets:precompile
       - name: Create Feedback at Step1
         if: contains(github.ref, 'step1')
         env:
@@ -137,11 +151,11 @@ jobs:
         with:
           filename: .github/feedback_template.md
       - name: Create Error File on Branch Name
-        if: "!contains(github.ref, 'step1') && !contains(github.ref, 'step2') && !contains(github.ref, 'step3') && !contains(github.ref, 'step4') && !contains(github.ref, 'step5')"
+        if: "!contains(github.ref, 'step1') && !contains(github.ref, 'step2') && !contains(github.ref, 'step3') && !contains(github.ref, 'step4') && !contains(github.ref, 'step5') && !contains(github.ref, 'upgrade/ruby-4.0.5-rails-8.1.3')"
         run: |
           echo -e "---\ntitle: ディープロ：課題評価に関するご連絡\n---\n## 課題の評価が実行できませんでした。\nブランチ名に誤りがないか確認してください。\n課題の評価が可能なブランチ名：step1、step2、step3、step4、step5" > .github/branch_error_template.md
       - uses: JasonEtco/create-an-issue@v2
-        if: "!contains(github.ref, 'step1') && !contains(github.ref, 'step2') && !contains(github.ref, 'step3') && !contains(github.ref, 'step4') && !contains(github.ref, 'step5')"
+        if: "!contains(github.ref, 'step1') && !contains(github.ref, 'step2') && !contains(github.ref, 'step3') && !contains(github.ref, 'step4') && !contains(github.ref, 'step5') && !contains(github.ref, 'upgrade/ruby-4.0.5-rails-8.1.3')"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

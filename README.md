@@ -1,24 +1,44 @@
-# README
+# cdp_web_manyo_task
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+「万葉」課題で使用するRailsアプリケーションのスターターです。
 
-Things you may want to cover:
+## 動作環境
 
-* Ruby version
+- Ruby 4.0.5
+- Ruby on Rails 8.1.3
+- Bundler 4.0.10
+- PostgreSQL 18.4
+- Node.js 24.18.0
+- Yarn 1.22.x
 
-* System dependencies
+## セットアップ
 
-* Configuration
+PostgreSQLを起動してから、次のコマンドを実行してください。
 
-* Database creation
+```bash
+bundle install
+yarn install --frozen-lockfile
+bundle exec rails db:prepare
+```
 
-* Database initialization
+## サーバー起動
 
-* How to run the test suite
+```bash
+bundle exec rails server
+```
 
-* Services (job queues, cache servers, search engines, etc.)
+ブラウザで `http://localhost:3000` を開きます。
 
-* Deployment instructions
+## テスト
 
-* ...
+```bash
+RAILS_ENV=test bundle exec rails db:prepare
+bundle exec rails test
+```
+
+## 環境変数
+
+- `DATABASE_URL`: 接続先データベースをURLで指定する場合に使用します。
+- `RAILS_MAX_THREADS`: データベース接続プールとPumaの最大スレッド数です。未指定時は5です。
+- `CDP_WEB_MANYO_TASK_DATABASE_PASSWORD`: production環境のPostgreSQLパスワードです。
+- `RAILS_MASTER_KEY`: production環境などで暗号化済みcredentialsを読む場合に使用します。
