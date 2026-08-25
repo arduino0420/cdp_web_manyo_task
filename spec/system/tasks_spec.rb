@@ -6,9 +6,9 @@ RSpec.describe 'タスク管理機能', type: :system do
       it '登録したタスクが表示される' do
         visit new_task_path
 
-        fill_in 'Title', with: '書類作成'
-        fill_in 'Content', with: '企画書を作成する。'
-        click_button 'Create Task'
+        fill_in 'タイトル', with: '書類作成'
+        fill_in '内容', with: '企画書を作成する。'
+        click_button '登録する'
 
         expect(page).to have_content '書類作成'
         expect(page).to have_content '企画書を作成する。'
