@@ -38,7 +38,7 @@ ja:
 
     navigation:
       index: タスク一覧
-      new: タスク登録
+      new: タスクを登録する
 
   views:
     pagination:
