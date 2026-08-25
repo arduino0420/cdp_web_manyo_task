@@ -26,6 +26,17 @@ RSpec.describe 'タスク管理機能', type: :system do
         expect(page).to have_content '書類作成'
       end
     end
+
+    context '作成日時の異なるタスクが複数ある場合' do
+      it '新しいタスクが上に表示される' do
+        old_task = FactoryBot.create(:task, created_at: 1.day.ago)
+        new_task = FactoryBot.create(:second_task, created_at: Time.current)
+
+        visit tasks_path
+
+        expect(page.body.index(new_task.title)).to be < page.body.index(old_task.title)
+      end
+    end
   end
 
   describe '詳細表示機能' do

@@ -30,6 +30,8 @@ gem 'bootsnap', '>= 1.4.2', require: false
 
 gem 'rails-i18n', '~> 8.1.0'
 
+gem 'kaminari'
+
 group :development, :test do
   gem 'byebug', platforms: [:mri, :windows]
   gem 'rspec-rails'

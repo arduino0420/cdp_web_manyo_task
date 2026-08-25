@@ -35,3 +35,15 @@ ja:
       created: タスクを登録しました
       updated: タスクを更新しました
       destroyed: タスクを削除しました
+
+    navigation:
+      index: タスク一覧
+      new: タスク登録
+
+  views:
+    pagination:
+      first: 最初
+      last: 最後
+      previous: 前へ
+      next: 次へ
+      truncate: "..."
