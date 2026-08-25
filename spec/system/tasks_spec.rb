@@ -29,6 +29,8 @@ RSpec.describe 'タスク管理機能', type: :system do
 
     context '作成日時の異なるタスクが複数ある場合' do
       it '新しいタスクが上に表示される' do
+        Task.delete_all
+
         old_task = FactoryBot.create(:task, created_at: 1.day.ago)
         new_task = FactoryBot.create(:second_task, created_at: Time.current)
 
