@@ -8,10 +8,16 @@ RSpec.describe 'タスク管理機能', type: :system do
 
         fill_in 'タイトル', with: '書類作成'
         fill_in '内容', with: '企画書を作成する。'
+        fill_in '終了期限', with: Date.current + 3.days
+        select '中', from: '優先度'
+        select '未着手', from: 'ステータス'
         click_button '登録する'
 
         expect(page).to have_content '書類作成'
         expect(page).to have_content '企画書を作成する。'
+        expect(page).to have_content Date.current + 3.days
+        expect(page).to have_content '中'
+        expect(page).to have_content '未着手'
       end
     end
   end
@@ -22,6 +28,9 @@ RSpec.describe 'タスク管理機能', type: :system do
         :task,
         title: '新しいタスク',
         content: '新しいタスクの内容',
+        deadline_on: Date.current + 3.days,
+        priority: :中,
+        status: :未着手,
         created_at: Time.current
       )
     end
@@ -31,6 +40,9 @@ RSpec.describe 'タスク管理機能', type: :system do
         :task,
         title: '1日前のタスク',
         content: '1日前のタスクの内容',
+        deadline_on: Date.current + 1.day,
+        priority: :高,
+        status: :着手中,
         created_at: 1.day.ago
       )
     end
@@ -40,6 +52,9 @@ RSpec.describe 'タスク管理機能', type: :system do
         :task,
         title: '2日前のタスク',
         content: '2日前のタスクの内容',
+        deadline_on: Date.current + 2.days,
+        priority: :低,
+        status: :完了,
         created_at: 2.days.ago
       )
     end
@@ -61,6 +76,55 @@ RSpec.describe 'タスク管理機能', type: :system do
         expect(task_list[0]).to have_content first_task.title
         expect(task_list[1]).to have_content second_task.title
         expect(task_list[2]).to have_content third_task.title
+      end
+
+      it '終了期限をクリックすると終了期限の昇順で表示される' do
+        click_link '終了期限'
+
+        task_list = all('tbody tr')
+
+        expect(task_list[0]).to have_content second_task.title
+        expect(task_list[1]).to have_content third_task.title
+        expect(task_list[2]).to have_content first_task.title
+      end
+
+      it '優先度をクリックすると優先度の高い順で表示される' do
+        click_link '優先度'
+
+        expect(page).to have_selector('tbody tr', count: 3)
+
+        html = page.body
+
+        expect(html.index(second_task.title)).to be < html.index(first_task.title)
+        expect(html.index(first_task.title)).to be < html.index(third_task.title)
+      end
+
+      it 'タイトルであいまい検索できる' do
+        fill_in 'タイトル', with: '新しい'
+        click_button '検索'
+
+        expect(page).to have_content first_task.title
+        expect(page).not_to have_content second_task.title
+        expect(page).not_to have_content third_task.title
+      end
+
+      it 'ステータスで検索できる' do
+        select '着手中', from: 'ステータス'
+        click_button '検索'
+
+        expect(page).not_to have_content first_task.title
+        expect(page).to have_content second_task.title
+        expect(page).not_to have_content third_task.title
+      end
+
+      it 'タイトルとステータスの両方で検索できる' do
+        fill_in 'タイトル', with: '新しい'
+        select '未着手', from: 'ステータス'
+        click_button '検索'
+
+        expect(page).to have_content first_task.title
+        expect(page).not_to have_content second_task.title
+        expect(page).not_to have_content third_task.title
       end
     end
   end
