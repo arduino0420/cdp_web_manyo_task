@@ -85,5 +85,8 @@ jobs:
       - name: Compile test Webpacker assets
         run: RAILS_ENV=test bundle exec rails webpacker:compile
 
+      - name: Prepare test database
+        run: RAILS_ENV=test bundle exec rails db:create db:migrate
+
       - name: Run learner tests and requirement evaluation
         run: bin/check "${{ inputs.step || github.ref_name }}"
