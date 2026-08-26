@@ -83,7 +83,7 @@ RSpec.describe 'タスク管理機能', type: :system do
       end
 
       it '終了期限をクリックすると終了期限の昇順で表示される' do
-        click_link '終了期限'
+        visit tasks_path(sort_deadline_on: true)
 
         task_list = all('tbody tr')
 
