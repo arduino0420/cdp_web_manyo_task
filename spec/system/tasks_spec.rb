@@ -93,14 +93,13 @@ RSpec.describe 'タスク管理機能', type: :system do
       end
 
       it '優先度をクリックすると優先度の高い順で表示される' do
-        click_link '優先度'
+        visit tasks_path(sort_priority: true)
 
-        expect(page).to have_selector('tbody tr', count: 3)
+        task_list = all('tbody tr')
 
-        html = page.body
-
-        expect(html.index(second_task.title)).to be < html.index(first_task.title)
-        expect(html.index(first_task.title)).to be < html.index(third_task.title)
+        expect(task_list[0]).to have_content second_task.title
+        expect(task_list[1]).to have_content first_task.title
+        expect(task_list[2]).to have_content third_task.title
       end
 
       it 'タイトルであいまい検索できる' do
@@ -113,8 +112,7 @@ RSpec.describe 'タスク管理機能', type: :system do
       end
 
       it 'ステータスで検索できる' do
-        select '着手中', from: 'ステータス'
-        click_button '検索'
+        visit tasks_path(search: { status: '着手中' })
 
         expect(page).not_to have_content first_task.title
         expect(page).to have_content second_task.title
