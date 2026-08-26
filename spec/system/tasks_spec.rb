@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe 'タスク管理機能', type: :system do
+  before do
+    Task.delete_all
+  end
+
   describe '登録機能' do
     context 'タスクを登録した場合' do
       it '登録したタスクが表示される' do

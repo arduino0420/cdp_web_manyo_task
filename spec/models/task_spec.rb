@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe Task, type: :model do
+  before do
+    Task.delete_all
+  end
+
   it 'is invalid without a title' do
     task = FactoryBot.build(:task, title: '')
 
