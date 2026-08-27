@@ -24,6 +24,8 @@ RSpec.describe 'タスク管理機能', type: :system do
         select '未着手', from: 'ステータス'
         click_button '登録する'
 
+        puts "DEBUG PAGE: #{page.text}" unless page.has_content?('書類作成')
+
         expect(page).to have_content '書類作成'
         expect(page).to have_content '企画書を作成する。'
         expect(page).to have_content Date.current + 3.days
