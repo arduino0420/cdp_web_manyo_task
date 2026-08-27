@@ -1,5 +1,6 @@
 FactoryBot.define do
   factory :task do
+    association :user
     title { '書類作成' }
     content { '企画書を作成する。' }
     deadline_on { Date.current + 3.days }
@@ -8,6 +9,7 @@ FactoryBot.define do
   end
 
   factory :second_task, class: Task do
+    association :user
     title { 'メール送信' }
     content { '顧客へ営業のメールを送る。' }
     deadline_on { Date.current + 2.days }
@@ -16,6 +18,7 @@ FactoryBot.define do
   end
 
   factory :third_task, class: Task do
+    association :user
     title { '会議準備' }
     content { '会議資料を準備する。' }
     deadline_on { Date.current + 1.day }

@@ -1,8 +1,15 @@
 require 'rails_helper'
 
 RSpec.describe 'タスク管理機能', type: :system do
+  let!(:user) { FactoryBot.create(:user) }
+
   before do
     Task.delete_all
+
+    visit new_session_path
+    fill_in 'メールアドレス', with: user.email
+    fill_in 'パスワード', with: user.password
+    click_button 'ログイン'
   end
 
   describe '登録機能' do
