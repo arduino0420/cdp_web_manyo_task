@@ -15,7 +15,7 @@ unless Rails.env.test?
 
   Task.delete_all
 
-  25.times do |i|
+  50.times do |i|
     admin.tasks.create!(
       title: "管理者タスク#{i + 1}",
       content: "管理者タスク#{i + 1}の内容",
@@ -25,7 +25,7 @@ unless Rails.env.test?
     )
   end
 
-  25.times do |i|
+  50.times do |i|
     user.tasks.create!(
       title: "一般ユーザタスク#{i + 1}",
       content: "一般ユーザタスク#{i + 1}の内容",
