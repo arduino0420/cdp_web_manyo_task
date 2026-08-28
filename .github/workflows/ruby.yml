@@ -29,7 +29,7 @@ on:
       evaluator_ref:
         description: 固定して使用する評価コードのタグまたはSHA
         required: false
-        default: 35d72d323934e15868280a264c3de4318525adca
+        default: d57ed505d0b52ef13d4f09af4b112a1594ff7312
         type: string
 
 permissions:
@@ -60,7 +60,7 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres@localhost:5432/manyo_test
-      MANYO_EVALUATOR_REF: ${{ inputs.evaluator_ref || '35d72d323934e15868280a264c3de4318525adca' }}
+      MANYO_EVALUATOR_REF: ${{ inputs.evaluator_ref || 'd57ed505d0b52ef13d4f09af4b112a1594ff7312' }}
       PGTZ: UTC
       RAILS_ENV: test
       SECRET_KEY_BASE: manyo-evaluation-test
