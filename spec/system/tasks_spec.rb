@@ -33,6 +33,27 @@ RSpec.describe 'タスク管理機能', type: :system do
         expect(page).to have_content '未着手'
       end
     end
+
+    context 'ラベルを選択してタスクを登録した場合' do
+      let!(:label) { FactoryBot.create(:label, user: user, name: '仕事') }
+
+      it '登録したタスクにラベルが付けられる' do
+        visit new_task_path
+
+        fill_in 'タイトル', with: 'ラベル付きタスク'
+        fill_in '内容', with: 'ラベルのテスト'
+        fill_in '終了期限', with: Date.current + 3.days
+        select '中', from: '優先度'
+        select '未着手', from: 'ステータス'
+
+        check "task_label_ids_#{label.id}"
+
+        click_button '登録する'
+
+        expect(page).to have_content 'ラベル付きタスク'
+        expect(page).to have_content '仕事'
+      end
+    end
   end
 
   describe '一覧表示機能' do
@@ -128,6 +149,20 @@ RSpec.describe 'タスク管理機能', type: :system do
 
         expect(page).not_to have_content first_task.title
         expect(page).to have_content second_task.title
+        expect(page).not_to have_content third_task.title
+      end
+
+      it 'ラベルで検索できる' do
+        label = FactoryBot.create(:label, user: user, name: '仕事')
+        first_task.labels << label
+
+        visit tasks_path
+
+        select '仕事', from: 'ラベル'
+        click_button '検索'
+
+        expect(page).to have_content first_task.title
+        expect(page).not_to have_content second_task.title
         expect(page).not_to have_content third_task.title
       end
 

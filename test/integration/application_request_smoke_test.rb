@@ -5,6 +5,6 @@ class ApplicationRequestSmokeTest < ActionDispatch::IntegrationTest
     get "/404.html"
 
     assert_response :success
-    assert_includes response.body, "The page you were looking for doesn't exist."
+    assert_includes response.body.force_encoding("UTF-8"), "お探しのページは見つかりません。"
   end
 end
