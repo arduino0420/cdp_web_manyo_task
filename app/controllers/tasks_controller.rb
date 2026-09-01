@@ -15,6 +15,11 @@ class TasksController < ApplicationController
           tasks = tasks.search_status(params[:search][:status])
         end
 
+        if params[:search][:label].present?
+          label = current_user.labels.find_by(id: params[:search][:label])
+          tasks = tasks.joins(:labels).where(labels: { id: label.id }) if label
+        end
+
         tasks.recent
       elsif params[:sort_deadline_on]
         current_user.tasks.sort_deadline_on
@@ -76,7 +81,8 @@ class TasksController < ApplicationController
       :content,
       :deadline_on,
       :priority,
-      :status
+      :status,
+      label_ids: []
     )
   end
 end

@@ -6,14 +6,17 @@
     <%= csp_meta_tag %>
 
     <%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= stylesheet_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
     <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
   </head>
 
   <body>
-    <nav>
+    <nav class="d-flex justify-content-end gap-3 p-3">
       <% if logged_in? %>
         <%= link_to t('tasks.navigation.index'), tasks_path, id: 'tasks-index' %>
         <%= link_to t('tasks.navigation.new'), new_task_path, id: 'new-task' %>
+        <%= link_to 'ラベル一覧', labels_path, id: 'labels-index' %>
+        <%= link_to 'ラベルを登録する', new_label_path, id: 'new-label' %>
         <%= link_to 'アカウント', user_path(current_user), id: 'account-setting' %>
         <% if current_user.admin? %>
           <%= link_to 'ユーザ一覧', admin_users_path, id: 'users-index' %>
@@ -26,9 +29,21 @@
       <% end %>
     </nav>
 
-    <p><%= notice %></p>
-    <p><%= alert %></p>
+    <% if notice %>
+      <div class="alert alert-success" role="alert">
+        <%= notice %>
+      </div>
+    <% end %>
 
-    <%= yield %>
+    <% if alert %>
+      <div class="alert alert-danger" role="alert">
+        <%= alert %>
+      </div>
+    <% end %>
+
+    <div class="container">
+      <%= yield %>
+    </div>
+
   </body>
 </html>
