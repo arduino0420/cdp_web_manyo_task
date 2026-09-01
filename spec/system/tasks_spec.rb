@@ -1,8 +1,15 @@
 require 'rails_helper'
 
 RSpec.describe 'タスク管理機能', type: :system do
+  let!(:user) { FactoryBot.create(:user) }
+
   before do
     Task.delete_all
+
+    visit new_session_path
+    fill_in 'メールアドレス', with: user.email
+    fill_in 'パスワード', with: user.password
+    click_button 'ログイン'
   end
 
   describe '登録機能' do
@@ -16,6 +23,8 @@ RSpec.describe 'タスク管理機能', type: :system do
         select '中', from: '優先度'
         select '未着手', from: 'ステータス'
         click_button '登録する'
+
+        puts "DEBUG PAGE: #{page.text}" unless page.has_content?('書類作成')
 
         expect(page).to have_content '書類作成'
         expect(page).to have_content '企画書を作成する。'
@@ -35,7 +44,8 @@ RSpec.describe 'タスク管理機能', type: :system do
         deadline_on: Date.current + 3.days,
         priority: :中,
         status: :未着手,
-        created_at: Time.current
+        created_at: Time.current,
+        user: user
       )
     end
 
@@ -47,7 +57,8 @@ RSpec.describe 'タスク管理機能', type: :system do
         deadline_on: Date.current + 1.day,
         priority: :高,
         status: :着手中,
-        created_at: 1.day.ago
+        created_at: 1.day.ago,
+        user: user
       )
     end
 
@@ -59,7 +70,8 @@ RSpec.describe 'タスク管理機能', type: :system do
         deadline_on: Date.current + 2.days,
         priority: :低,
         status: :完了,
-        created_at: 2.days.ago
+        created_at: 2.days.ago,
+        user: user
       )
     end
 
@@ -134,7 +146,7 @@ RSpec.describe 'タスク管理機能', type: :system do
   describe '詳細表示機能' do
     context '任意のタスク詳細画面に遷移した場合' do
       it 'そのタスクの内容が表示される' do
-        task = FactoryBot.create(:task)
+        task = FactoryBot.create(:task, user: user)
 
         visit task_path(task)
 

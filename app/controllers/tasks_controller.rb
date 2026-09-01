@@ -1,8 +1,11 @@
 class TasksController < ApplicationController
+  before_action :require_login
+  before_action :set_task, only: %i[show edit update destroy]
+
   def index
     @tasks =
       if params[:search].present?
-        tasks = Task.all
+        tasks = current_user.tasks
 
         if params[:search][:title].present?
           tasks = tasks.search_title(params[:search][:title])
@@ -14,22 +17,22 @@ class TasksController < ApplicationController
 
         tasks.recent
       elsif params[:sort_deadline_on]
-        Task.sort_deadline_on
+        current_user.tasks.sort_deadline_on
       elsif params[:sort_priority]
-        Task.sort_priority
+        current_user.tasks.sort_priority
       else
-        Task.recent
+        current_user.tasks.recent
       end
 
     @tasks = @tasks.page(params[:page]).per(10)
   end
 
   def new
-    @task = Task.new
+    @task = current_user.tasks.new
   end
 
   def create
-    @task = Task.new(task_params)
+    @task = current_user.tasks.new(task_params)
 
     if @task.save
       redirect_to tasks_path, notice: I18n.t('tasks.flash.created')
@@ -39,16 +42,12 @@ class TasksController < ApplicationController
   end
 
   def show
-    @task = Task.find(params[:id])
   end
 
   def edit
-    @task = Task.find(params[:id])
   end
 
   def update
-    @task = Task.find(params[:id])
-
     if @task.update(task_params)
       redirect_to @task, notice: I18n.t('tasks.flash.updated')
     else
@@ -57,13 +56,19 @@ class TasksController < ApplicationController
   end
 
   def destroy
-    @task = Task.find(params[:id])
     @task.destroy
-
     redirect_to tasks_path, notice: I18n.t('tasks.flash.destroyed')
   end
 
   private
+
+  def set_task
+    @task = current_user.tasks.find_by(id: params[:id])
+
+    return if @task
+
+    redirect_to tasks_path, alert: 'アクセス権限がありません'
+  end
 
   def task_params
     params.require(:task).permit(
